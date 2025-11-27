@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bank Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .hidden { display: none; }
+        input, select, button { margin: 5px 0; padding: 5px; }
+        .container { max-width: 600px; margin: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Bank Dashboard</h1>
+
+    <!-- Login Form -->
+    <div id="login-section">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username"><br>
+        <input type="password" id="password" placeholder="Password"><br>
+        <button onclick="login()">Login</button>
+        <p id="login-message" style="color:red;"></p>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard-section" class="hidden">
+        <h2>Welcome, <span id="user-name"></span></h2>
+        <p>Balance: $<span id="user-balance"></span></p>
+
+        <!-- Transaction History -->
+        <h3>Transaction History</h3>
+        <table id="transactions-table">
+            <thead>
+                <tr>
+                    <th>Receiver</th>
+                    <th>Amount</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <!-- Transfer Form -->
+        <h3>Transfer to Payee</h3>
+        <select id="payee-select"></select><br>
+        <input type="number" id="transfer-amount" placeholder="Amount"><br>
+        <button onclick="transfer()">Transfer</button>
+        <p id="transfer-message" style="color:green;"></p>
+
+        <button onclick="logout()">Logout</button>
+    </div>
+</div>
+
+<script>
+let authToken = null;
+
+// Login
+function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    fetch('/api/login/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.detail === "login success") {
+            authToken = data.token;
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+            loadDashboard();
+        } else {
+            document.getElementById('login-message').innerText = data.detail;
+        }
+    });
+}
+
+// Load accounts and payees
+function loadDashboard() {
+    fetch('/api/accounts/', {
+        headers: { 'Authorization': 'Token ' + authToken }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.length > 0) {
+            const account = data[0];
+            document.getElementById('user-name').innerText = account.user;
+            document.getElementById('user-balance').innerText = account.balance;
+        }
+    });
+
+    fetch('/api/payees/', {
+        headers: { 'Authorization': 'Token ' + authToken }
+    })
+    .then(res => res.json())
+    .then(data => {
+        const select = document.getElementById('payee-select');
+        select.innerHTML = '';
+        data.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.text = `${p.name} (${p.account_number})`;
+            select.add(opt);
+        });
+    });
+}
+
+// Transfer
+function transfer() {
+    const payeeId = document.getElementById('payee-select').value;
+    const amount = document.getElementById('transfer-amount').value;
+
+    fetch('/api/transfer/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Token ' + authToken
+        },
+        body: JSON.stringify({
+            from_account_id: 1,
+            payee_id: payeeId,
+            amount: amount
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.detail === "transfer success") {
+            document.getElementById('transfer-message').style.color = 'green';
+            document.getElementById('transfer-message').innerText = `Transferred $${amount} successfully!`;
+            document.getElementById('user-balance').innerText = data.new_balance;
+        } else {
+            document.getElementById('transfer-message').style.color = 'red';
+            document.getElementById('transfer-message').innerText = data.detail;
+        }
+    });
+}
+
+// Logout
+function logout() {
+    fetch('/api/logout/', {
+        method: 'POST',
+        headers: { 'Authorization': 'Token ' + authToken }
+    }).then(() => {
+        authToken = null;
+        document.getElementById('dashboard-section').classList.add('hidden');
+        document.getElementById('login-section').classList.remove('hidden');
+    });
+}
+</script>
+</body>
+</html>
