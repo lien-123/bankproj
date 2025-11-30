@@ -81,8 +81,15 @@ function login() {
     });
 }
 
-// Load accounts and payees
+// Load accounts, payees, and transactions
 function loadDashboard() {
+    loadAccount();
+    loadPayees();
+    loadTransactions();   // <--- ⭐ 新增這個
+}
+
+// Load user's account
+function loadAccount() {
     fetch('/api/accounts/', {
         headers: { 'Authorization': 'Token ' + authToken }
     })
@@ -94,7 +101,10 @@ function loadDashboard() {
             document.getElementById('user-balance').innerText = account.balance;
         }
     });
+}
 
+// Load payees
+function loadPayees() {
     fetch('/api/payees/', {
         headers: { 'Authorization': 'Token ' + authToken }
     })
@@ -107,6 +117,34 @@ function loadDashboard() {
             opt.value = p.id;
             opt.text = `${p.name} (${p.account_number})`;
             select.add(opt);
+        });
+    });
+}
+
+// ⭐ Load transactions
+function loadTransactions() {
+    fetch('/api/transactions/', {
+        headers: { 'Authorization': 'Token ' + authToken }
+    })
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.querySelector('#transactions-table tbody');
+        tbody.innerHTML = '';
+
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No transactions found.</td></tr>';
+            return;
+        }
+
+        data.forEach(tx => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${tx.to_account_owner_name}</td>
+                <td>$${tx.amount}</td>
+                <td>${tx.completed_at}</td>
+                <td>${tx.status}</td>
+            `;
+            tbody.appendChild(row);
         });
     });
 }
@@ -130,13 +168,18 @@ function transfer() {
     })
     .then(res => res.json())
     .then(data => {
+        const msg = document.getElementById('transfer-message');
+
         if(data.detail === "transfer success") {
-            document.getElementById('transfer-message').style.color = 'green';
-            document.getElementById('transfer-message').innerText = `Transferred $${amount} successfully!`;
+            msg.style.color = 'green';
+            msg.innerText = `Transferred $${amount} successfully!`;
+
             document.getElementById('user-balance').innerText = data.new_balance;
+
+            loadTransactions();  // ⭐ 轉帳成功後重新刷新交易紀錄
         } else {
-            document.getElementById('transfer-message').style.color = 'red';
-            document.getElementById('transfer-message').innerText = data.detail;
+            msg.style.color = 'red';
+            msg.innerText = data.detail;
         }
     });
 }

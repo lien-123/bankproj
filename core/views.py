@@ -126,6 +126,14 @@ def transfer_to_payee(request):
         "transaction": TransactionSerializer(tx).data
     })
 
+class TransactionListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TransactionSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        # 查詢所有「從我的帳戶」轉出的交易
+        return Transaction.objects.filter(from_account__user=user).order_by('-completed_at')
 
 # -------------------
 # Serve frontend
