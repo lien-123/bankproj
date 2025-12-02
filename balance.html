@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>用戶餘額</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="balanceContainer">
+    <h2>用戶餘額</h2>
+    <div class="balanceAmount" id="balance">
+    NT$ 0
+  </div>
+
+  <script>
+  window.onload = function () {
+  const token = localStorage.getItem('Token'); 
+  fetch("http://localhost:8000/api/accounts/", {
+    headers: { 'Authorization': `Token ${token}` }
+  })
+    .then(response => {
+      if (!response.ok) throw new Error("抓取餘額失敗");
+      return response.json();
+    })
+    .then(data => {
+      const balance = parseFloat(data[0].balance);
+      document.getElementById("balance").innerText =
+        "NT$ " + balance.toLocaleString();
+    })
+    .catch(error => {
+      console.error(error);
+      alert("抓取餘額失敗，請重新登入");
+    });
+};
+</script>
+    <button class="balanceButton" onclick="location.href='menu.html'">回選單</button>
+  </div>
+</body>
+</html>

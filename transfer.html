@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>轉帳</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="transferContainer">
+    <h2>請選擇轉帳類型</h2>
+
+    <button class="Registered" onclick="location.href='Registered.html'">約定轉帳</button>
+    <button class="nonRegistered" >非約定轉帳</button>
+
+    
+
+  <script>
+    function goNext() {
+      const nonReg = document.getElementById("nonRegistered").checked;
+      if (nonReg) {
+        location.href = "otp.html";
+      } else {
+        location.href = "notification.html";
+      }
+    }
+  </script>
+
+  <button class="balanceButton" onclick="location.href='menu.html'">回選單</button>
+</body>
+</html>

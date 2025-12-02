@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>交易紀錄</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="recordContainer">
+  <h2>交易紀錄</h2>
+
+  <div id="transactionList" class="transactionList">
+  </div>
+
+  <button class="balanceButton"  onclick="location.href='menu.html'">回選單</button>
+</div>
+
+<script>
+window.onload = async function () { 
+const token = localStorage.getItem('Token');
+  const res = await fetch("http://127.0.0.1:8000/api/transactions/", {
+    headers: { 'Authorization': `Token ${token}` }
+  });
+
+  if (!res.ok) {
+    alert("抓取交易紀錄失敗");
+    return;
+  }
+
+  const transactions = await res.json();
+  const list = document.getElementById("transactionList");
+  list.innerHTML = ''; 
+
+  transactions.forEach(tr => {
+    const card = document.createElement("div");
+    card.className = "transactionCard";
+
+    const date = new Date(tr.completed_at).toLocaleString();
+
+    card.innerHTML = `
+      <div class="left">
+        <div class="item">${tr.note || tr.to_account_owner_name}</div> 
+        <div class="date">${date}</div>
+      </div>
+      <div class="amount ${parseFloat(tr.amount) < 0 ? 'plus' : 'minus'}"> 
+        ${parseFloat(tr.amount) > 0 ? '-' : '+'}${parseFloat(tr.amount).toLocaleString()}
+      </div> 
+    `;//因為api回傳的是正數
+    list.appendChild(card);
+  });
+};
+</script>
+
+</body>
+</html>
